@@ -49,6 +49,17 @@ export const studentSchema = z.object({
     .max(255, "La nacionalidad no debe exceder los 255 caracteres"),
 });
 
+export const courseSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: "El nombre es obligatorio." })
+    .max(255, { message: "El nombre no puede exceder 255 caracteres." }),
+  description: z.string().min(1, { message: "La descripción es obligatoria." }),
+  duration: z
+    .string()
+    .min(1, { message: "La duración debe ser un número entero positivo." }),
+});
+
 export const handleSubmit = (
   e: React.FormEvent<HTMLFormElement>,
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@nextui-org/react";
-import { FaSun, FaMoon } from "react-icons/fa"; // Importamos los iconos desde react-icons
+import { FaSun, FaMoon } from "react-icons/fa";
 
 export const ThemeSelector = () => {
   const [mounted, setMounted] = useState(false);

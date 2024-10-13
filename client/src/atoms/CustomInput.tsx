@@ -4,7 +4,7 @@ interface CustomInputProps {
   type: string;
   name: string;
   label: string;
-  value: string;
+  value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isInvalid?: boolean;
   errorMessage?: string;
@@ -25,13 +25,13 @@ const CustomInput: React.FC<CustomInputProps> = ({
         type={type}
         name={name}
         label={label}
-        value={value}
+        value={String(value)}
         onChange={onChange}
         className="w-full"
-        variant="bordered"
+        variant="flat"
         radius="sm"
         isInvalid={isInvalid}
-        errorMessage={errorMessage} // Mostrar el mensaje de error si existe
+        errorMessage={errorMessage}
       />
     </div>
   );

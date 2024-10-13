@@ -121,7 +121,7 @@ export const FormStudent = () => {
         onChange={handleDepartmentChange}
         errorMessage={errors.state}
         value={data.state}
-        variant="bordered"
+        variant="flat"
         radius="sm"
         name="state"
       >
@@ -139,7 +139,7 @@ export const FormStudent = () => {
         errorMessage={errors.city}
         isInvalid={Boolean(errors.city)}
         disabled={!data.state}
-        variant="bordered"
+        variant="flat"
         radius="sm"
         name="city"
       >
@@ -165,7 +165,7 @@ export const FormStudent = () => {
         onChange={(newDate) => setData({ ...data, birth_date: newDate })}
         isInvalid={Boolean(errors.birth_date)}
         errorMessage={errors.birth_date}
-        variant="bordered"
+        variant="flat"
       />
       <Select
         label="Genero"
@@ -174,7 +174,7 @@ export const FormStudent = () => {
         value={data.gender}
         errorMessage={errors.gender}
         isInvalid={Boolean(errors.gender)}
-        variant="bordered"
+        variant="flat"
         radius="sm"
         name="gender"
       >
