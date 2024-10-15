@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Table,
   TableHeader,
@@ -8,21 +8,26 @@ import {
   TableCell,
   Pagination,
   Skeleton,
-  Button,
+  Tooltip,
 } from "@nextui-org/react";
 import { api } from "../api/api";
 import toast from "react-hot-toast";
 import { Course, Student } from "../types/data";
 import { ModalStudents } from "./ModalStudents";
+import { FaRegEye, FaPencil, FaTrash } from "react-icons/fa6";
 
 interface Props {
   students: Student[];
   loading: boolean;
+  setSelected: React.Dispatch<React.SetStateAction<string>>;
+  setDataCourse: React.Dispatch<React.SetStateAction<Course | undefined>>;
 }
 
 export default function DataTableCourse({
   students,
   loading: loadingStudents,
+  setSelected,
+  setDataCourse,
 }: Props) {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -32,6 +37,7 @@ export default function DataTableCourse({
     undefined
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const profile = localStorage.getItem("profile");
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -68,10 +74,49 @@ export default function DataTableCourse({
     setSelectedCourse(undefined);
   };
 
+  const handleRemoveCourse = async (courseId: number) => {
+    try {
+      await api.delete(`/courses/${courseId}`);
+      setCourses(courses.filter((course) => course.id !== courseId));
+      toast.success("Curso eliminado correctamente");
+    } catch {
+      toast.error("Error al eliminar el curso");
+    }
+  };
+
+  const renderActions = useCallback(
+    (courseId: number) => (
+      <div className="relative flex items-center gap-2">
+        <Tooltip content="Ver estudiantes">
+          <span className="text-lg text-green-400 cursor-pointer active:opacity-50">
+            <FaRegEye onClick={() => handleOpenModal(courseId)} />
+          </span>
+        </Tooltip>
+        <Tooltip content="Editar">
+          <span className="text-lg text-blue-400 cursor-pointer active:opacity-50">
+            <FaPencil
+              onClick={() => {
+                setSelected("formCourse");
+                const course = courses.find((course) => course.id === courseId);
+                if (course) setDataCourse(course);
+              }}
+            />
+          </span>
+        </Tooltip>
+        <Tooltip color="danger" content="Eliminar">
+          <span className="text-lg text-danger cursor-pointer active:opacity-50">
+            <FaTrash onClick={() => handleRemoveCourse(courseId)} />
+          </span>
+        </Tooltip>
+      </div>
+    ),
+    [courses]
+  );
+
   return (
     <>
       <Table
-        aria-label="Course data table with pagination"
+        aria-label="Course data table with actions"
         bottomContent={
           !loading && (
             <div className="flex w-full justify-center">
@@ -87,15 +132,13 @@ export default function DataTableCourse({
             </div>
           )
         }
-        classNames={{
-          wrapper: "min-h-[222px]",
-        }}
+        classNames={{ wrapper: "min-h-[222px]" }}
       >
         <TableHeader>
           <TableColumn key="name">Nombre</TableColumn>
           <TableColumn key="description">Descripción</TableColumn>
           <TableColumn key="duration">Duración</TableColumn>
-          <TableColumn key="ver">Ver Estudiantes</TableColumn>
+          <TableColumn key="actions">Acciones</TableColumn>
         </TableHeader>
         <TableBody>
           {loading ? (
@@ -122,13 +165,9 @@ export default function DataTableCourse({
                 <TableCell>{item.description}</TableCell>
                 <TableCell>{`${item.duration} horas`}</TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    color="primary"
-                    onClick={() => handleOpenModal(item.id)}
-                  >
-                    Ver
-                  </Button>
+                  {profile === "Administrador"
+                    ? renderActions(item.id ?? 0)
+                    : null}
                 </TableCell>
               </TableRow>
             ))

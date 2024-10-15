@@ -9,9 +9,21 @@ import {
   Image,
 } from "@nextui-org/react";
 import { ThemeSelector } from "../atoms/ThemeSelector";
+import { useState } from "react";
 
 export default function NavbarCustom() {
-  const profiles = ["usuario", "administrador"];
+  const profiles = ["Usuario", "Administrador"];
+  const [selectedProfile, setSelectedProfile] = useState<string>(
+    localStorage.getItem("profile") || profiles[0]
+  );
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    window.location.reload();
+    setSelectedProfile(value);
+    localStorage.setItem("profile", value);
+  };
+
   return (
     <Navbar maxWidth="xl" height="6rem">
       <NavbarBrand className="flex items-center gap-2">
@@ -25,8 +37,9 @@ export default function NavbarCustom() {
         <Select
           label="Perfil"
           size="md"
-          defaultSelectedKeys={["usuario"]}
           className="w-52"
+          value={selectedProfile}
+          onChange={handleProfileChange}
         >
           {profiles.map((profile) => (
             <SelectItem key={profile} value={profile}>

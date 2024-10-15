@@ -6,13 +6,16 @@ import { FormCourses } from "./components/FormCourses";
 import DataTableStudets from "./components/DataTable";
 import DataTableCourse from "./components/DataTableCourse";
 import { useEffect, useState } from "react";
-import { Student } from "./types/data";
+import { Course, Student } from "./types/data";
 import { api } from "./api/api";
 
 function App() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string>("FormStudent");
+  const [dataCourse, setDataCourse] = useState<Course>();
+  const [dataStudent, setDataStudent] = useState<Student>();
+  const [reFetch, setReFetch] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -29,7 +32,7 @@ function App() {
     };
 
     fetchStudents();
-  }, []);
+  }, [reFetch]);
 
   return (
     <div>
@@ -45,22 +48,40 @@ function App() {
             <Tab key="FormStudent" title="Crear Estudiante">
               <Card>
                 <CardBody>
-                  <FormStudent />
+                  <FormStudent
+                    dataStudent={dataStudent}
+                    setReFetch={setReFetch}
+                    setDataStudent={setDataStudent}
+                  />
                 </CardBody>
               </Card>
             </Tab>
             <Tab key="formCourse" title="Crear Cursos">
               <Card>
                 <CardBody>
-                  <FormCourses />
+                  <FormCourses
+                    dataCourse={dataCourse}
+                    setDataCourse={setDataCourse}
+                  />
                 </CardBody>
               </Card>
             </Tab>
             <Tab key="students" title="Estudiantes">
-              <DataTableStudets students={students} loading={loading} />
+              <DataTableStudets
+                students={students}
+                loading={loading}
+                setSelected={setSelected}
+                setDataStudent={setDataStudent}
+                setStudents={setStudents}
+              />
             </Tab>
             <Tab key="courses" title="Cursos">
-              <DataTableCourse students={students} loading={loading} />
+              <DataTableCourse
+                students={students}
+                loading={loading}
+                setSelected={setSelected}
+                setDataCourse={setDataCourse}
+              />
             </Tab>
           </Tabs>
         </div>

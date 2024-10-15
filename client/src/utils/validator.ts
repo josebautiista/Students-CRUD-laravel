@@ -55,9 +55,15 @@ export const courseSchema = z.object({
     .min(1, { message: "El nombre es obligatorio." })
     .max(255, { message: "El nombre no puede exceder 255 caracteres." }),
   description: z.string().min(1, { message: "La descripción es obligatoria." }),
-  duration: z
-    .string()
-    .min(1, { message: "La duración debe ser un número entero positivo." }),
+  duration: z.union([
+    z
+      .string()
+      .min(1, { message: "La duración debe ser un número entero positivo." }),
+    z
+      .number()
+      .int()
+      .positive({ message: "La duración debe ser un número entero positivo." }),
+  ]),
 });
 
 export const handleSubmit = (
@@ -65,7 +71,10 @@ export const handleSubmit = (
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>,
   setData: React.Dispatch<React.SetStateAction<Student>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  todayString: string
+  todayString: string,
+  dataStudent: Student | undefined,
+  setReFetch: React.Dispatch<React.SetStateAction<boolean>>,
+  setDataStudent: React.Dispatch<React.SetStateAction<Student | undefined>>
 ) => {
   e.preventDefault();
   const formData = new FormData(e.currentTarget);
@@ -81,10 +90,19 @@ export const handleSubmit = (
     setErrors(newErrors);
   } else {
     setLoading(true);
-    api
-      .post("/students", dataObject)
+
+    const apiUrl = dataStudent ? `/students/${dataStudent.id}` : "/students";
+    const apiMethod = dataStudent ? "put" : "post";
+
+    api[apiMethod](apiUrl, dataObject)
       .then(() => {
-        toast.success("Estudiante agregado exitosamente");
+        const successMessage = dataStudent
+          ? "Estudiante actualizado exitosamente"
+          : "Estudiante agregado exitosamente";
+
+        toast.success(successMessage);
+        setReFetch((prev) => !prev);
+        setDataStudent(undefined);
         setData({
           first_name: "",
           last_name: "",
@@ -100,12 +118,13 @@ export const handleSubmit = (
         });
       })
       .catch((err) => {
-        toast.error("Error al agregar el estudiante");
+        toast.error("Error al guardar el estudiante");
         console.error(err);
       })
       .finally(() => {
         setLoading(false);
       });
+
     setErrors({});
   }
 };

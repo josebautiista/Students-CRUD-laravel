@@ -9,7 +9,17 @@ import { genders } from "../data/genders";
 import { parseDate } from "@internationalized/date";
 import { Student } from "../types/data";
 
-export const FormStudent = () => {
+interface Props {
+  dataStudent: Student | undefined;
+  setReFetch: React.Dispatch<React.SetStateAction<boolean>>;
+  setDataStudent: React.Dispatch<React.SetStateAction<Student | undefined>>;
+}
+
+export const FormStudent = ({
+  dataStudent,
+  setReFetch,
+  setDataStudent,
+}: Props) => {
   const today = new Date();
   const todayString = today.toISOString().split("T")[0];
   const [data, setData] = useState<Student>({
@@ -29,6 +39,15 @@ export const FormStudent = () => {
   const [departments, setDepartments] = useState<Departament[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (dataStudent) {
+      setData({
+        ...dataStudent,
+        birth_date: parseDate(String(dataStudent.birth_date)),
+      });
+    }
+  }, [dataStudent]);
 
   useEffect(() => {
     const getDepartments = async () => {
@@ -67,7 +86,16 @@ export const FormStudent = () => {
     <form
       className="grid grid-cols-1 md:grid-cols-2 gap-4"
       onSubmit={(e) =>
-        handleSubmit(e, setErrors, setData, setLoading, todayString)
+        handleSubmit(
+          e,
+          setErrors,
+          setData,
+          setLoading,
+          todayString,
+          dataStudent,
+          setReFetch,
+          setDataStudent
+        )
       }
     >
       <CustomInput
@@ -201,7 +229,7 @@ export const FormStudent = () => {
           className="text-white font-bold"
           isLoading={loading}
         >
-          Guardar
+          {dataStudent ? "Actualizar" : "Registrar"}
         </Button>
       </div>
     </form>

@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input, Button, Textarea, Spacer } from "@nextui-org/react";
 import { Course } from "../types/data";
 import { courseSchema } from "../utils/validator";
 import { api } from "../api/api";
 import toast from "react-hot-toast";
 
-export const FormCourses = () => {
+interface Props {
+  dataCourse: Course | undefined;
+  setDataCourse: React.Dispatch<React.SetStateAction<Course | undefined>>;
+}
+
+export const FormCourses = ({ dataCourse, setDataCourse }: Props) => {
   const [data, setData] = useState<Course>({
     name: "",
     description: "",
     duration: 0,
   });
+
+  useEffect(() => {
+    if (dataCourse) {
+      setData(dataCourse);
+    }
+  }, [dataCourse]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -21,34 +32,36 @@ export const FormCourses = () => {
     setData({ ...data, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
-    const dataObject = Object.fromEntries(formData.entries());
-
-    const validation = courseSchema.safeParse(dataObject);
+    const validation = courseSchema.safeParse(data);
     if (!validation.success) {
       const newErrors: Record<string, string> = {};
       validation.error.errors.forEach((error) => {
         newErrors[error.path[0]] = error.message;
       });
       setErrors(newErrors);
-    } else {
-      setLoading(true);
-      api
-        .post("/courses", dataObject)
-        .then(() => {
-          toast.success("Curso agregado exitosamente");
-          setData({ name: "", description: "", duration: 0 });
-        })
-        .catch((error) => {
-          toast.error(error.response.data.message);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-      setErrors({});
+      return;
+    }
+
+    setErrors({});
+    setLoading(true);
+
+    try {
+      if (dataCourse) {
+        await api.put(`/courses/${dataCourse.id}`, data);
+        toast.success("Curso actualizado exitosamente");
+      } else {
+        await api.post("/courses", data);
+        toast.success("Curso creado exitosamente");
+      }
+      setDataCourse(undefined);
+      setData({ name: "", description: "", duration: 0 });
+    } catch {
+      toast.error("Error al actualizar el curso");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,7 +111,7 @@ export const FormCourses = () => {
 
       <div className="w-full flex justify-end">
         <Button type="submit" color="success" isLoading={loading}>
-          Crear
+          {dataCourse ? "Actualizar" : "Crear"}
         </Button>
       </div>
     </form>
