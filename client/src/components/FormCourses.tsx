@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { Input, Button, Textarea, Spacer } from "@nextui-org/react";
-import { Course } from "../types/data";
+import {
+  Input,
+  Button,
+  Textarea,
+  Spacer,
+  Select,
+  SelectItem,
+} from "@nextui-org/react";
+import { Course, Teacher } from "../types/data";
 import { courseSchema } from "../utils/validator";
 import { api } from "../api/api";
 import toast from "react-hot-toast";
@@ -15,16 +22,30 @@ export const FormCourses = ({ dataCourse, setDataCourse }: Props) => {
     name: "",
     description: "",
     duration: 0,
+    teacher_id: undefined,
   });
+
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await api.get("/teachers");
+        setTeachers(response.data);
+      } catch {
+        toast.error("Error al cargar los profesores");
+      }
+    };
+    fetchTeachers();
+  }, []);
 
   useEffect(() => {
     if (dataCourse) {
       setData(dataCourse);
     }
   }, [dataCourse]);
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
 
   const onChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -47,7 +68,7 @@ export const FormCourses = ({ dataCourse, setDataCourse }: Props) => {
 
     setErrors({});
     setLoading(true);
-
+    console.log("data", data);
     try {
       if (dataCourse) {
         await api.put(`/courses/${dataCourse.id}`, data);
@@ -57,7 +78,12 @@ export const FormCourses = ({ dataCourse, setDataCourse }: Props) => {
         toast.success("Curso creado exitosamente");
       }
       setDataCourse(undefined);
-      setData({ name: "", description: "", duration: 0 });
+      setData({
+        name: "",
+        description: "",
+        duration: 0,
+        teacher_id: undefined,
+      });
     } catch {
       toast.error("Error al actualizar el curso");
     } finally {
@@ -106,6 +132,28 @@ export const FormCourses = ({ dataCourse, setDataCourse }: Props) => {
         errorMessage={errors.duration}
         fullWidth
       />
+
+      <Spacer y={1} />
+
+      <Select
+        label="Profesor"
+        value={data.teacher_id ? data.teacher_id.toString() : ""}
+        onChange={(e) =>
+          setData({ ...data, teacher_id: Number(e.target.value) })
+        }
+        placeholder="Selecciona un profesor"
+        isInvalid={!!errors.teacher_id}
+        errorMessage={errors.teacher_id}
+      >
+        {teachers.map((teacher) => (
+          <SelectItem
+            key={teacher.id || `teacher_${Math.random()}`}
+            value={teacher.id?.toString() || ""}
+          >
+            {`${teacher.first_name} ${teacher.last_name}`}
+          </SelectItem>
+        ))}
+      </Select>
 
       <Spacer y={1} />
 

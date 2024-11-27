@@ -11,10 +11,12 @@ import {
   Tooltip,
 } from "@nextui-org/react";
 import { Student } from "../types/data";
-import { FaTrash } from "react-icons/fa";
-import { FaPencil } from "react-icons/fa6";
+import { FaTrash, FaPencilAlt, FaFilePdf, FaFileExcel } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { api } from "../api/api";
+import * as XLSX from "xlsx"; // Para exportar a Excel
+import jsPDF from "jspdf"; // Para exportar a PDF
+import "jspdf-autotable"; // Para tabla en PDF
 
 interface Props {
   students: Student[];
@@ -44,31 +46,108 @@ export default function DataTableStudents({
     return students.slice(start, end);
   }, [page, students]);
 
-  const handleRemoveStudents = async (courseId: number) => {
+  const handleRemoveStudent = async (studentId: number) => {
     try {
-      await api.delete(`/students/${courseId}`);
-      setStudents(students.filter((student) => student.id !== courseId));
+      await api.delete(`/students/${studentId}`);
+      setStudents(students.filter((student) => student.id !== studentId));
       toast.success("Estudiante eliminado correctamente");
     } catch {
       toast.error("Error al eliminar el estudiante");
     }
   };
 
+  const handleDownloadExcel = () => {
+    const worksheetData = students.map((student) => ({
+      Nombre: student.first_name,
+      Apellido: student.last_name,
+      Email: student.email,
+      Teléfono: student.phone,
+      "Fecha de Nacimiento": student.birth_date,
+      Dirección: student.address,
+      Ciudad: student.city,
+      Departamento: student.state,
+      Nacionalidad: student.nationality,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Estudiantes");
+    XLSX.writeFile(workbook, "Lista_Estudiantes.xlsx");
+  };
+
+  const handleDownloadPDF = () => {
+    if (students.length === 0) {
+        toast.error("No hay estudiantes para descargar");
+        return;
+    }
+
+    const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: "letter",
+    });
+
+    const image = new Image();
+    image.src = "/USCO_Logo.png";
+
+    image.onload = () => {
+        doc.addImage(image, "ICO", 40, 10, 50, 50);
+        doc.text("Lista de Estudiantes", 110, 40);
+
+        doc.autoTable({
+            startY: 70,
+            head: [
+                [
+                    "Nombre",
+                    "Apellido",
+                    "Email",
+                    "Teléfono",
+                    "Fecha de Nacimiento",
+                    "Dirección",
+                    "Ciudad",
+                    "Departamento",
+                    "Nacionalidad",
+                ],
+            ],
+            body: students.map((student) => [
+                student.first_name,
+                student.last_name,
+                student.email,
+                student.phone,
+                student.birth_date,
+                student.address,
+                student.city,
+                student.state,
+                student.nationality,
+            ]),
+            theme: "grid",
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [41, 128, 185] },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
+
+        doc.save("Lista_Estudiantes.pdf");
+    };
+
+    image.onerror = () => {
+        toast.error("No se pudo cargar la imagen");
+    };
+};
+
+
   useEffect(() => {
     setPage(1);
   }, [students]);
 
   const renderActions = useCallback(
-    (courseId: number) => (
+    (studentId: number) => (
       <div className="relative flex items-center gap-2">
         <Tooltip content="Editar">
           <span className="text-lg text-blue-400 cursor-pointer active:opacity-50">
-            <FaPencil
+            <FaPencilAlt
               onClick={() => {
                 setSelected("formStudent");
-                const student = students.find(
-                  (student) => student.id === courseId
-                );
+                const student = students.find((student) => student.id === studentId);
                 if (student) setDataStudent(student);
               }}
             />
@@ -76,7 +155,7 @@ export default function DataTableStudents({
         </Tooltip>
         <Tooltip color="danger" content="Eliminar">
           <span className="text-lg text-danger cursor-pointer active:opacity-50">
-            <FaTrash onClick={() => handleRemoveStudents(courseId)} />
+            <FaTrash onClick={() => handleRemoveStudent(studentId)} />
           </span>
         </Tooltip>
       </div>
@@ -89,7 +168,19 @@ export default function DataTableStudents({
       aria-label="Student data table with pagination"
       bottomContent={
         !loading && (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-between items-center">
+            <div className="flex gap-2">
+              <Tooltip content="Descargar lista de estudiantes (PDF)">
+                <span className="text-lg text-red-500 cursor-pointer active:opacity-50">
+                  <FaFilePdf onClick={handleDownloadPDF} />
+                </span>
+              </Tooltip>
+              <Tooltip content="Descargar lista de estudiantes (Excel)">
+                <span className="text-lg text-green-500 cursor-pointer active:opacity-50">
+                  <FaFileExcel onClick={handleDownloadExcel} />
+                </span>
+              </Tooltip>
+            </div>
             <Pagination
               isCompact
               showControls
@@ -110,7 +201,7 @@ export default function DataTableStudents({
         <TableColumn key="first_name">Nombre</TableColumn>
         <TableColumn key="last_name">Apellidos</TableColumn>
         <TableColumn key="email">Email</TableColumn>
-        <TableColumn key="phone">Telefono</TableColumn>
+        <TableColumn key="phone">Teléfono</TableColumn>
         <TableColumn key="birth_date">Fecha de Nacimiento</TableColumn>
         <TableColumn key="address">Dirección</TableColumn>
         <TableColumn key="city">Ciudad</TableColumn>
@@ -122,33 +213,11 @@ export default function DataTableStudents({
         {loading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <TableRow key={index}>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-3 w-4/5 rounded-lg" />
-              </TableCell>
+              {Array.from({ length: 9 }).map((_, cellIndex) => (
+                <TableCell key={cellIndex}>
+                  <Skeleton className="h-3 w-4/5 rounded-lg" />
+                </TableCell>
+              ))}
             </TableRow>
           ))
         ) : items.length > 0 ? (
@@ -164,9 +233,7 @@ export default function DataTableStudents({
               <TableCell>{item.state}</TableCell>
               <TableCell>{item.nationality}</TableCell>
               <TableCell>
-                {profile === "Administrador"
-                  ? renderActions(item.id ?? 0)
-                  : null}
+                {profile === "Administrador" ? renderActions(item.id ?? 0) : null}
               </TableCell>
             </TableRow>
           ))

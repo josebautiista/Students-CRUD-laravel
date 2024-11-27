@@ -3,26 +3,28 @@ import { useState, useEffect } from "react";
 import { fetchDepartments } from "../data/departament";
 import { City, Departament } from "../types/departament";
 import { fetchCities } from "../data/city";
-import { handleSubmit } from "../utils/validator";
+import { handleTeacherSubmit } from "../utils/validator";
 import CustomInput from "../atoms/CustomInput";
 import { genders } from "../data/genders";
 import { parseDate } from "@internationalized/date";
-import { Student } from "../types/data";
+import { Teacher } from "../types/data";
+import { api } from "../api/api";
 
 interface Props {
-  dataStudent: Student | undefined;
+  dataTeacher: Teacher | undefined;
   setReFetch: React.Dispatch<React.SetStateAction<boolean>>;
-  setDataStudent: React.Dispatch<React.SetStateAction<Student | undefined>>;
+  setDataTeacher: React.Dispatch<React.SetStateAction<Teacher | undefined>>;
 }
 
-export const FormStudent = ({
-  dataStudent,
+export const FormTeacher = ({
+  dataTeacher,
   setReFetch,
-  setDataStudent,
+  setDataTeacher,
 }: Props) => {
   const today = new Date();
   const todayString = today.toISOString().split("T")[0];
-  const [data, setData] = useState<Student>({
+  const [data, setData] = useState<Teacher>({
+    identificacion: "",
     first_name: "",
     last_name: "",
     email: "",
@@ -39,15 +41,25 @@ export const FormStudent = ({
   const [departments, setDepartments] = useState<Departament[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
+  const [foundTeacher, setFoundTeacher] = useState<Teacher | null>(null);
 
   useEffect(() => {
-    if (dataStudent) {
+    if (dataTeacher) {
       setData({
-        ...dataStudent,
-        birth_date: parseDate(String(dataStudent.birth_date)),
+        ...dataTeacher,
+        birth_date: parseDate(String(dataTeacher.birth_date)),
       });
     }
-  }, [dataStudent]);
+  }, [dataTeacher]);
+
+  useEffect(() => {
+    if (foundTeacher) {
+      setData({
+        ...foundTeacher,
+        birth_date: parseDate(String(foundTeacher.birth_date)),
+      });
+    }
+  }, [foundTeacher]);
 
   useEffect(() => {
     const getDepartments = async () => {
@@ -57,6 +69,35 @@ export const FormStudent = ({
 
     getDepartments();
   }, []);
+
+  const handleChangeTeacher = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setData({ ...data, [e.target.name]: e.target.value });
+    if (e.target.value !== "") {
+      const fetchTeacher = await api.get(`/teachers/${e.target.value}`);
+      console.log("fetchTeacher", fetchTeacher.data);
+      if (fetchTeacher.data !== null) {
+        setFoundTeacher(fetchTeacher.data);
+      }
+    } else {
+      setData({
+        identificacion: "",
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        postal_code: "",
+        birth_date: parseDate(todayString),
+        gender: "",
+        nationality: "",
+      });
+      setFoundTeacher(null);
+    }
+  };
 
   const onChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -86,18 +127,27 @@ export const FormStudent = ({
     <form
       className="grid grid-cols-1 md:grid-cols-2 gap-4"
       onSubmit={(e) =>
-        handleSubmit(
+        handleTeacherSubmit(
           e,
           setErrors,
           setData,
           setLoading,
           todayString,
-          dataStudent,
+          dataTeacher ? dataTeacher : foundTeacher,
           setReFetch,
-          setDataStudent
+          setDataTeacher
         )
       }
     >
+      <CustomInput
+        type="text"
+        name="identificacion"
+        label="Identificación"
+        value={data.identificacion}
+        onChange={handleChangeTeacher}
+        isInvalid={Boolean(errors.identificacion)}
+        errorMessage={errors.identificacion}
+      />
       <CustomInput
         type="text"
         name="first_name"
@@ -128,7 +178,7 @@ export const FormStudent = ({
       <CustomInput
         type="text"
         name="phone"
-        label="Telefono"
+        label="Teléfono"
         value={data.phone}
         onChange={onChange}
         isInvalid={Boolean(errors.phone)}
@@ -180,7 +230,7 @@ export const FormStudent = ({
       <CustomInput
         type="text"
         name="postal_code"
-        label="Codigo Postal"
+        label="Código Postal"
         value={data.postal_code}
         onChange={onChange}
         isInvalid={Boolean(errors.postal_code)}
@@ -196,7 +246,7 @@ export const FormStudent = ({
         variant="flat"
       />
       <Select
-        label="Genero"
+        label="Género"
         className="w-full"
         onChange={onChange}
         value={data.gender}
@@ -229,7 +279,7 @@ export const FormStudent = ({
           className="text-white font-bold"
           isLoading={loading}
         >
-          {dataStudent ? "Actualizar" : "Registrar"}
+          {dataTeacher || foundTeacher ? "Actualizar" : "Registrar"}
         </Button>
       </div>
     </form>

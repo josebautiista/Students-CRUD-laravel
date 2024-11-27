@@ -2,33 +2,49 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class StudentController extends Controller
+class TeacherController extends Controller
 {
     public function index()
     {
-        $students = Student::all();
+        $teachers = Teacher::all();
 
-        if ($students->isEmpty()) {
+        if ($teachers->isEmpty()) {
             $data = [
                 'status' => 'success',
-                'message' => 'No se encontraron estudiantes',
+                'message' => 'No se encontraron profesores',
             ];
             return response()->json($data, 200);
         }
 
-        return response()->json($students, 200);
+        return response()->json($teachers, 200);
     }
+
+    public function getOne($id)
+    {
+        if ($id == '') {
+            return null;
+        }
+        $teacher = Teacher::where('identificacion', $id)->first();
+
+        if (!$teacher) {
+            return null;
+        }
+
+        return response()->json($teacher, 200);
+    }
+
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'identificacion' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:students'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:teachers'],
             'phone' => ['required', 'string', 'max:10'],
             'address' => ['string', 'max:100'],
             'city' => ['string', 'max:255'],
@@ -43,57 +59,58 @@ class StudentController extends Controller
             $data = [
                 'status' => '400',
                 'errors' => $validator->errors(),
-                'message' => 'No se pudo registrar el estudiante',
+                'message' => 'No se pudo registrar el profesor',
             ];
             return response()->json($data, 400);
         }
 
-        $student = new Student();
-        $student->first_name = $request->first_name;
-        $student->last_name = $request->last_name;
-        $student->email = $request->email;
-        $student->phone = $request->phone;
-        $student->address = $request->address;
-        $student->city = $request->city;
-        $student->state = $request->state;
-        $student->postal_code = $request->postal_code;
-        $student->birth_date = $request->birth_date;
-        $student->gender = $request->gender;
-        $student->nationality = $request->nationality;
-        $student->save();
+        $teacher = new Teacher();
+        $teacher->identificacion = $request->identificacion;
+        $teacher->first_name = $request->first_name;
+        $teacher->last_name = $request->last_name;
+        $teacher->email = $request->email;
+        $teacher->phone = $request->phone;
+        $teacher->address = $request->address;
+        $teacher->city = $request->city;
+        $teacher->state = $request->state;
+        $teacher->postal_code = $request->postal_code;
+        $teacher->birth_date = $request->birth_date;
+        $teacher->gender = $request->gender;
+        $teacher->nationality = $request->nationality;
+        $teacher->save();
 
-        if (!$student) {
+        if (!$teacher) {
             $data = [
                 'status' => '404',
-                'message' => 'No se pudo registrar el estudiante',
+                'message' => 'No se pudo registrar el profesor',
             ];
             return response()->json($data, 404);
         }
 
         $data = [
             'status' => 'success',
-            'message' => 'Estudiante registrado exitosamente',
-            'student' => $student,
+            'message' => 'Profesor registrado exitosamente',
+            'teacher' => $teacher,
         ];
         return response()->json($data, 200);
     }
 
     public function show($id)
     {
-        $student = Student::find($id);
+        $teacher = Teacher::find($id);
 
-        if (!$student) {
+        if (!$teacher) {
             $data = [
                 'status' => '404',
-                'message' => 'No se encontró el estudiante',
+                'message' => 'No se encontró el profesor',
             ];
             return response()->json($data, 404);
         }
 
         $data = [
             'status' => 'success',
-            'message' => 'Estudiante encontrado exitosamente',
-            'student' => $student,
+            'message' => 'Profesor encontrado exitosamente',
+            'teacher' => $teacher,
         ];
         return response()->json($data, 200);
     }
@@ -101,14 +118,15 @@ class StudentController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
+            'identificacion' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:students'],
-            'phone' => ['required', 'string', 'max:10'],
-            'address' => ['string', 'max:100'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:255'],
+            'address' => ['string', 'max:255'],
             'city' => ['string', 'max:255'],
             'state' => ['string', 'max:255'],
-            'postal_code' => ['string', 'max:10'],
+            'postal_code' => ['string', 'max:255'],
             'birth_date' => ['date'],
             'gender' => ['string', 'max:50'],
             'nationality' => ['string', 'max:255'],
@@ -118,57 +136,58 @@ class StudentController extends Controller
             $data = [
                 'status' => '400',
                 'errors' => $validator->errors(),
-                'message' => 'No se pudo actualizar el estudiante',
+                'message' => 'No se pudo actualizar el profesor',
             ];
             return response()->json($data, 400);
         }
 
-        $student = Student::find($id);
-        $student->first_name = $request->first_name;
-        $student->last_name = $request->last_name;
-        $student->email = $request->email;
-        $student->phone = $request->phone;
-        $student->address = $request->address;
-        $student->city = $request->city;
-        $student->state = $request->state;
-        $student->postal_code = $request->postal_code;
-        $student->birth_date = $request->birth_date;
-        $student->gender = $request->gender;
-        $student->nationality = $request->nationality;
-        $student->save();
+        $teacher = Teacher::find($id);
+        $teacher->identificacion = $request->identificacion;
+        $teacher->first_name = $request->first_name;
+        $teacher->last_name = $request->last_name;
+        $teacher->email = $request->email;
+        $teacher->phone = $request->phone;
+        $teacher->address = $request->address;
+        $teacher->city = $request->city;
+        $teacher->state = $request->state;
+        $teacher->postal_code = $request->postal_code;
+        $teacher->birth_date = $request->birth_date;
+        $teacher->gender = $request->gender;
+        $teacher->nationality = $request->nationality;
+        $teacher->save();
 
-        if (!$student) {
+        if (!$teacher) {
             $data = [
                 'status' => '404',
-                'message' => 'No se pudo actualizar el estudiante',
+                'message' => 'No se pudo actualizar el profesor',
             ];
             return response()->json($data, 404);
         }
 
         $data = [
             'status' => 'success',
-            'message' => 'Estudiante actualizado exitosamente',
-            'student' => $student,
+            'message' => 'Profesor actualizado exitosamente',
+            'teacher' => $teacher,
         ];
         return response()->json($data, 200);
     }
 
     public function destroy($id)
     {
-        $student = Student::find($id);
-        if (!$student) {
+        $teacher = Teacher::find($id);
+        if (!$teacher) {
             $data = [
                 'status' => '404',
-                'message' => 'No se pudo encontrar el estudiante',
+                'message' => 'No se pudo encontrar el profesor',
             ];
             return response()->json($data, 404);
         }
 
-        $student->delete();
+        $teacher->delete();
 
         $data = [
             'status' => 'success',
-            'message' => 'Estudiante eliminado exitosamente',
+            'message' => 'Profesor eliminado exitosamente',
         ];
         return response()->json($data, 200);
     }
@@ -176,9 +195,10 @@ class StudentController extends Controller
     public function updatePartial(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
+            'identificacion' => ['string', 'max:255'],
             'first_name' => ['string', 'max:255'],
             'last_name' => ['string', 'max:255'],
-            'email' => ['string', 'email', 'max:255', 'unique:students'],
+            'email' => ['string', 'email', 'max:255', 'unique:teachers'],
             'phone' => ['string', 'max:255'],
             'address' => ['string', 'max:255'],
             'city' => ['string', 'max:255'],
@@ -193,51 +213,55 @@ class StudentController extends Controller
             $data = [
                 'status' => '400',
                 'errors' => $validator->errors(),
-                'message' => 'No se pudo actualizar el estudiante',
+                'message' => 'No se pudo actualizar el profesor',
             ];
             return response()->json($data, 400);
         }
 
-        $student = Student::find($id);
+        $teacher = Teacher::find($id);
+
+        if ($request->identificacion) {
+            $teacher->identificacion = $request->identificacion;
+        }
         if ($request->first_name) {
-            $student->first_name = $request->first_name;
+            $teacher->first_name = $request->first_name;
         }
         if ($request->last_name) {
-            $student->last_name = $request->last_name;
+            $teacher->last_name = $request->last_name;
         }
         if ($request->email) {
-            $student->email = $request->email;
+            $teacher->email = $request->email;
         }
         if ($request->phone) {
-            $student->phone = $request->phone;
+            $teacher->phone = $request->phone;
         }
         if ($request->address) {
-            $student->address = $request->address;
+            $teacher->address = $request->address;
         }
         if ($request->city) {
-            $student->city = $request->city;
+            $teacher->city = $request->city;
         }
         if ($request->state) {
-            $student->state = $request->state;
+            $teacher->state = $request->state;
         }
         if ($request->postal_code) {
-            $student->postal_code = $request->postal_code;
+            $teacher->postal_code = $request->postal_code;
         }
         if ($request->birth_date) {
-            $student->birth_date = $request->birth_date;
+            $teacher->birth_date = $request->birth_date;
         }
         if ($request->gender) {
-            $student->gender = $request->gender;
+            $teacher->gender = $request->gender;
         }
         if ($request->nationality) {
-            $student->nationality = $request->nationality;
+            $teacher->nationality = $request->nationality;
         }
-        $student->save();
+        $teacher->save();
 
         $data = [
             'status' => 'success',
-            'message' => 'Estudiante actualizado exitosamente',
-            'student' => $student,
+            'message' => 'Profesor actualizado exitosamente',
+            'teacher' => $teacher,
         ];
         return response()->json($data, 200);
     }

@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use PDF;
 
 class CourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::with('students')->get();
+        $courses = Course::with(['students', 'teacher'])->get();
 
         if ($courses->isEmpty()) {
             return response()->json([
@@ -24,10 +25,12 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'duration' => ['required', 'integer'],
+            'teacher_id' => ['nullable', 'exists:teachers,id'],
         ]);
 
         if ($validator->fails()) {
@@ -42,6 +45,7 @@ class CourseController extends Controller
         $course->name = $request->name;
         $course->description = $request->description;
         $course->duration = $request->duration;
+        $course->teacher_id = $request->teacher_id;
         $course->save();
 
         return response()->json([
@@ -185,6 +189,57 @@ class CourseController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Estudiantes desasociados del curso exitosamente',
+        ], 200);
+    }
+
+    public function downloadStudentList($id)
+    {
+        $course = Course::with('students')->find($id);
+
+        if (!$course) {
+            return response()->json([
+                'status' => '404',
+                'message' => 'No se encontró el curso',
+            ], 404);
+        }
+
+        // Genera el PDF
+        $pdf = PDF::loadView('pdf.course_students', ['course' => $course]);
+
+        // Devuelve el PDF para descarga
+        return $pdf->download("curso_{$course->id}_lista_estudiantes.pdf");
+    }
+
+    public function attachTeachers(Request $request, $courseId)
+    {
+        $validator = Validator::make($request->all(), [
+            'teachers' => ['required', 'array'],
+            'teachers.*' => ['exists:teachers,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => '400',
+                'errors' => $validator->errors(),
+                'message' => 'Datos no válidos',
+            ], 400);
+        }
+
+        $course = Course::find($courseId);
+        if (!$course) {
+            return response()->json([
+                'status' => '404',
+                'message' => 'Curso no encontrado',
+            ], 404);
+        }
+
+        foreach ($request->teachers as $teacherId) {
+            $course->teachers()->attach($teacherId, ['status' => 'active']);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profesores asociados al curso exitosamente',
         ], 200);
     }
 }
